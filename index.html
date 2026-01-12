@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PACU Nurse Led Auto Discharge Training - Nurse Training Record</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+      background-color: #f0f4f8;
+      margin: 0;
+      padding: 20px;
+      color: #2c3e50;
+    }
+    .container {
+      max-width: 1450px;
+      margin: 0 auto;
+      background: white;
+      padding: 35px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    h1 { text-align: center; color: #1a5276; margin: 0 0 8px; font-size: 2.2rem; }
+    .subtitle { text-align: center; color: #555; font-size: 1.35rem; margin: 0 0 1.5rem; }
+
+    .dashboard {
+      background: #f8fbff;
+      border: 1px solid #d6e9ff;
+      border-radius: 10px;
+      padding: 25px;
+      margin-bottom: 2.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 25px;
+    }
+    .stat-card {
+      background: white;
+      padding: 22px;
+      border-radius: 10px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+      text-align: center;
+    }
+    .stat-card h3 { margin: 0 0 10px; font-size: 1.15rem; color: #555; }
+    .stat-value { font-size: 2.6rem; font-weight: bold; color: #2980b9; }
+    
+    .progress-container { margin-top: 15px; }
+    .progress-bar-container {
+      height: 24px;
+      background: #e9ecef;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #27ae60, #2ecc71);
+      transition: width 0.5s ease;
+    }
+    .progress-label { text-align: center; margin-top: 8px; font-size: 1.1rem; color: #444; }
+
+    .search-box { max-width: 500px; margin: 0 auto 1.8rem; text-align: center; }
+    .search-box input {
+      width: 100%; padding: 12px; font-size: 1.1rem;
+      border: 2px solid #3498db; border-radius: 8px;
+    }
+    .login-form { max-width: 420px; margin: 0 auto 60px; }
+    label { display: block; margin-bottom: 0.6rem; font-weight: 600; }
+    input[type="text"], input[type="password"], input[type="date"] {
+      width: 100%; padding: 8px; border: 1px solid #bdc3c7; border-radius: 6px; font-size: 0.95rem;
+    }
+    
+    button {
+      padding: 13px 30px; background-color: #2980b9; color: white;
+      border: none; border-radius: 6px; font-size: 1.1rem; cursor: pointer;
+      margin: 5px;
+    }
+    button:hover { filter: brightness(90%); }
+    .save-btn { background-color: #27ae60; }
+    .print-btn { background-color: #8e44ad; }
+    .export-btn { background-color: #d35400; }
+
+    .error { color: #c0392b; text-align: center; margin-top: 1rem; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+    }
+    th, td {
+      padding: 10px 8px;
+      border: 1px solid #999;
+      text-align: center;
+      color: #2c3e50;
+      transition: background-color 0.3s ease;
+    }
+    th { background-color: #2980b9; color: white; font-weight: 600; }
+    
+    .row-complete { background-color: #d4efdf !important; }
+    .row-complete td { background-color: #d4efdf !important; }
+
+    .rank-col { width: 60px; font-weight: bold; }
+    .name-col { text-align: left; font-weight: 500; min-width: 200px; }
+    .count { font-weight: bold; color: #c85400; width: 80px; }
+
+    @media print {
+      body { background: white; padding: 0; margin: 0; }
+      .container { box-shadow: none; border-radius: 0; padding: 1cm; max-width: none; width: 100%; }
+      .dashboard, .search-box, button { display: none !important; }
+      .row-complete { background-color: #f0f0f0 !important; }
+      table { font-size: 9pt; width: 100%; }
+      th, td { padding: 6pt 4pt; }
+      @page { size: A4 landscape; margin: 1cm; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container" id="loginPage">
+  <h1>PACU Nurse Led Auto Discharge Training</h1>
+  <div class="login-form">
+    <div class="form-group">
+      <label for="username">Login Name</label>
+      <input type="text" id="username" autocomplete="off"/>
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="off"/>
+    </div>
+    <button onclick="handleLogin()">Login</button>
+    <div class="error" id="errorMsg"></div>
+  </div>
+</div>
+
+<div class="container" id="mainPage" style="display:none;">
+  <h1>PACU Nurse Led Auto Discharge Training</h1>
+  <div class="subtitle">Nurse Training Record</div>
+
+  <div class="dashboard" id="dashboard">
+    <div class="stat-card">
+      <h3>Total Nurses</h3>
+      <div class="stat-value" id="totalNurses">0</div>
+    </div>
+    <div class="stat-card">
+      <h3>Fully Trained Nurses<br><small>(Lecture + 5 Cases)</small></h3>
+      <div class="stat-value" id="trainedNurses">0</div>
+    </div>
+    <div class="stat-card" style="grid-column: span 2;">
+      <h3>Program Completion Rate</h3>
+      <div class="progress-container">
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="progressBar" style="width:0%"></div>
+        </div>
+        <div class="progress-label">
+          <span id="completionRate">0%</span> fully qualified
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search nurse name..." oninput="searchNurse()">
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="rank-col">Rank</th>
+        <th class="name-col">Nurse Name</th>
+        <th style="background-color: #1a5276;">Lecture</th>
+        <th>Case 1</th>
+        <th>Case 2</th>
+        <th>Case 3</th>
+        <th>Case 4</th>
+        <th>Case 5</th>
+        <th>Total Cases</th>
+      </tr>
+    </thead>
+    <tbody id="nurseList"></tbody>
+  </table>
+
+  <div style="text-align:center; margin-top:40px;">
+    <button class="save-btn" onclick="saveData()">Save Changes</button>
+    <button class="export-btn" onclick="exportToCSV()">Export to Excel</button>
+    <button class="print-btn" onclick="prepareAndPrint()">Print Record</button>
+  </div>
+</div>
+
+<script>
+const CORRECT_USER = "periop";
+const CORRECT_PASS = "1234";
+const STORAGE_KEY = "PACU_Training_Dates_2026_v9"; 
+
+const nurses = [
+  {rank: "APN", name: "CHAN Suet Fan"}, {rank: "APN", name: "CHAN Yuen Fun"}, {rank: "APN", name: "CHENG Mei Ling"},
+  {rank: "APN", name: "CHEUNG Hoi Ching"}, {rank: "APN", name: "CHEUNG Mei Yi"}, {rank: "APN", name: "CHOI Yee Ki"},
+  {rank: "APN", name: "HUNG Po Lam Mimi"}, {rank: "APN", name: "KO Wan Yiu"}, {rank: "APN", name: "KONG Tsui Yi"},
+  {rank: "APN", name: "KWOK Lai Fan"}, {rank: "APN", name: "LAI Pui Kuan"}, {rank: "APN", name: "LAM Lok Yin"},
+  {rank: "APN", name: "LAM Ting Ting"}, {rank: "APN", name: "LEE Wai Shan"}, {rank: "APN", name: "LEUNG Siu Chun Chloe"},
+  {rank: "APN", name: "LEUNG Wing Sum"}, {rank: "APN", name: "LI Wai Yi"}, {rank: "APN", name: "LIM Pik Yee"},
+  {rank: "APN", name: "LO Chi Wah"}, {rank: "APN", name: "NG Kit Ying"}, {rank: "APN", name: "NG Wing Yan Vim"},
+  {rank: "APN", name: "TAM Siu Kwan"}, {rank: "APN", name: "TAM Yuen Kwei"}, {rank: "APN", name: "TSO Mei Ling"},
+  {rank: "APN", name: "WAN Nga Wai"}, {rank: "APN", name: "WONG Ka Man"}, {rank: "APN", name: "WONG Mei"},
+  {rank: "APN", name: "WONG Pui Ki"}, {rank: "APN", name: "WONG Pui Pui"}, {rank: "EN", name: "CHAI Mo Yuet"},
+  {rank: "EN", name: "CHAN Fo"}, {rank: "EN", name: "HO Lai Ying"}, {rank: "EN", name: "LAM Man Yee"},
+  {rank: "EN", name: "TANG Mei Ping"}, {rank: "EN", name: "WAN Siu Ying"}, {rank: "EN", name: "YIP Kit Yan"},
+  {rank: "RN", name: "CHAN Cheuk Laam"}, {rank: "RN", name: "CHAN Ching Laam Elly"}, {rank: "RN", name: "CHAN Gei Tung"},
+  {rank: "RN", name: "CHAN Hiu Tung"}, {rank: "RN", name: "CHAN Ka Hin"}, {rank: "RN", name: "CHAN Ka Yan"},
+  {rank: "RN", name: "CHAN Man Leuk"}, {rank: "RN", name: "CHAN Nga Lam"}, {rank: "RN", name: "CHAN Shuk Yan"},
+  {rank: "RN", name: "CHAN Suet Lam Sharon"}, {rank: "RN", name: "CHAN Tsz Kwan"}, {rank: "RN", name: "CHAN Tsz Ying"},
+  {rank: "RN", name: "CHAN Wai Shan"}, {rank: "RN", name: "CHAN Yan Ho"}, {rank: "RN", name: "CHAN Yeuk Tsin"},
+  {rank: "RN", name: "CHAU Choi Yin"}, {rank: "RN", name: "CHEUNG Kwok Yuen Carol"}, {rank: "RN", name: "CHEUNG Lai Chun"},
+  {rank: "RN", name: "CHEUNG Pak Ho"}, {rank: "RN", name: "CHEUNG Pui Sze"}, {rank: "RN", name: "CHEUNG Tsz Kiu"},
+  {rank: "RN", name: "CHI Wai Fung"}, {rank: "RN", name: "CHOI Fung Sin"}, {rank: "RN", name: "CHOW Wing Gi Venus"},
+  {rank: "RN", name: "CHUN Yuk Man"}, {rank: "RN", name: "FONG Pui Yu"}, {rank: "RN", name: "FONG Tsz Kwan Phoebe"},
+  {rank: "RN", name: "FUNG Yan Tung"}, {rank: "RN", name: "FUNG Yim Ying"}, {rank: "RN", name: "GEORGE Anila"},
+  {rank: "RN", name: "HE Hingping"}, {rank: "RN", name: "HO Chun Wang"}, {rank: "RN", name: "HO I Neng"},
+  {rank: "RN", name: "HO Ka Ki"}, {rank: "RN", name: "HUANG Linghong"}, {rank: "RN", name: "IP Wai Yee"},
+  {rank: "RN", name: "KAM Yuen Kwan"}, {rank: "RN", name: "KO Yan Chi"}, {rank: "RN", name: "KONG Kwai Leung"},
+  {rank: "RN", name: "KONG Siu Ching"}, {rank: "RN", name: "KUNG Hoi Ling"}, {rank: "RN", name: "KWOK Hin Tung"},
+  {rank: "RN", name: "KWOK Hoi Lam"}, {rank: "RN", name: "KWOK Hoi Ying"}, {rank: "RN", name: "KWOK Kwan Yee"},
+  {rank: "RN", name: "KWOK Yuen Ting"}, {rank: "RN", name: "KWONG Tsz Ying Candy"}, {rank: "RN", name: "LAI Ka Wai"},
+  {rank: "RN", name: "LAI Wing Tung"}, {rank: "RN", name: "LAI Ya Ching"}, {rank: "RN", name: "LAM Hoi Kiu"},
+  {rank: "RN", name: "LAM Tung Yi"}, {rank: "RN", name: "LAU Mei Ting"}, {rank: "RN", name: "LAU Mung Sze"},
+  {rank: "RN", name: "LAW Ka Yan"}, {rank: "RN", name: "LEE Pui Ling"}, {rank: "RN", name: "LEUNG Hiu Tung Kylie"},
+  {rank: "RN", name: "LEUNG Ping Laam"}, {rank: "RN", name: "LEUNG Suen Lam"}, {rank: "RN", name: "LI Wai Tak"},
+  {rank: "RN", name: "LIM Sin Tong"}, {rank: "RN", name: "LIN Man Yan"}, {rank: "RN", name: "LO Chi Kit"},
+  {rank: "RN", name: "LUE Siu Fong"}, {rank: "RN", name: "NG Tsz Ching"}, {rank: "RN", name: "NG Wan Hin"},
+  {rank: "RN", name: "NUNG Oi Lan"}, {rank: "RN", name: "PANG Wing Yi"}, {rank: "RN", name: "PANG Yi"},
+  {rank: "RN", name: "POON Man See Mancy"}, {rank: "RN", name: "RAI Nisimma"}, {rank: "RN", name: "RUAN Danmei"},
+  {rank: "RN", name: "SO Hang Yu"}, {rank: "RN", name: "TAI Ting Fong"}, {rank: "RN", name: "TAM Man Cho"},
+  {rank: "RN", name: "TANG Chiu Wa"}, {rank: "RN", name: "TANG Yan Yan"}, {rank: "RN", name: "TANG Ying Shan"},
+  {rank: "RN", name: "THAPA Tej Chandra"}, {rank: "RN", name: "TIU Tin Po"}, {rank: "RN", name: "TONG Chun Kit"},
+  {rank: "RN", name: "TSANG Hing Nang"}, {rank: "RN", name: "TSANG Ka Fai"}, {rank: "RN", name: "TSANG Mei Ling"},
+  {rank: "RN", name: "TSANG Pak Ki"}, {rank: "RN", name: "TSANG Suk Fan"}, {rank: "RN", name: "TSANG Wing Lam"},
+  {rank: "RN", name: "TSANG Yuk Yi"}, {rank: "RN", name: "WONG Ching Hei"}, {rank: "RN", name: "WONG Hau Yan"},
+  {rank: "RN", name: "WONG Hei Man Eugenia"}, {rank: "RN", name: "WONG Hoi Ching"}, {rank: "RN", name: "WONG Hoi Ngai"},
+  {rank: "RN", name: "WONG Ka Chun"}, {rank: "RN", name: "WONG Si Hon"}, {rank: "RN", name: "WONG Sin Yan"},
+  {rank: "RN", name: "WONG Sze Wai"}, {rank: "RN", name: "WONG Yu Fun"}, {rank: "RN", name: "WU Ka Wai"},
+  {rank: "RN", name: "YEUNG Tsz Tung"}, {rank: "RN", name: "YIM Ho Pan"}, {rank: "RN", name: "YIP Yuen Ying"},
+  {rank: "RN", name: "YUEN Wai Kwan"}
+].sort((a, b) => a.name.localeCompare(b.name));
+
+function handleLogin() {
+  const user = document.getElementById("username").value.trim().toLowerCase();
+  const pass = document.getElementById("password").value.trim();
+  if (user === CORRECT_USER && pass === CORRECT_PASS) {
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("mainPage").style.display = "block";
+    loadNurseList();
+    loadSavedData();
+    // Re-trigger global dashboard update after data load
+    updateDashboard(); 
+  } else {
+    document.getElementById("errorMsg").textContent = "Incorrect credentials.";
+  }
+}
+
+function loadNurseList() {
+  const tbody = document.getElementById("nurseList");
+  tbody.innerHTML = "";
+  nurses.forEach(nurse => {
+    const name = nurse.name;
+    const row = document.createElement("tr");
+    row.dataset.name = name;
+    row.id = `row-${name.replace(/\s+/g,'-')}`;
+    row.innerHTML = `
+      <td class="rank-col">${nurse.rank}</td>
+      <td class="name-col">${name}</td>
+      <td class="lecture-col"><input type="date" data-name="${name}" data-type="lecture"></td>
+      <td><input type="date" data-name="${name}" data-index="0" data-type="case"></td>
+      <td><input type="date" data-name="${name}" data-index="1" data-type="case"></td>
+      <td><input type="date" data-name="${name}" data-index="2" data-type="case"></td>
+      <td><input type="date" data-name="${name}" data-index="3" data-type="case"></td>
+      <td><input type="date" data-name="${name}" data-index="4" data-type="case"></td>
+      <td class="count" id="count-${name.replace(/\s+/g,'-')}">0</td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  document.querySelectorAll('input[type="date"]').forEach(input => {
+    input.addEventListener('change', () => {
+      updateStats(input.dataset.name);
+    });
+  });
+  
+  // Initialize total count on dashboard immediately
+  document.getElementById("totalNurses").textContent = nurses.length;
+}
+
+function updateStats(name) {
+  const caseInputs = document.querySelectorAll(`input[data-name="${name}"][data-type="case"]`);
+  const lectureInput = document.querySelector(`input[data-name="${name}"][data-type="lecture"]`);
+  const row = document.getElementById(`row-${name.replace(/\s+/g,'-')}`);
+  
+  let caseCount = 0;
+  caseInputs.forEach(inp => { if (inp.value) caseCount++; });
+  
+  document.getElementById(`count-${name.replace(/\s+/g,'-')}`).textContent = caseCount;
+  
+  if (lectureInput.value && caseCount === 5) {
+    row.classList.add('row-complete');
+  } else {
+    row.classList.remove('row-complete');
+  }
+  
+  updateDashboard();
+}
+
+function updateDashboard() {
+  const total = nurses.length;
+  let fullyTrained = 0;
+
+  nurses.forEach(nurse => {
+    const name = nurse.name;
+    const lectureInput = document.querySelector(`input[data-name="${name}"][data-type="lecture"]`);
+    const caseInputs = document.querySelectorAll(`input[data-name="${name}"][data-type="case"]`);
+    
+    // Safety check if inputs exist
+    if(lectureInput) {
+        const lecture = lectureInput.value;
+        let caseCount = 0;
+        caseInputs.forEach(inp => { if (inp.value) caseCount++; });
+        if (lecture && caseCount === 5) fullyTrained++;
+    }
+  });
+
+  const rate = total > 0 ? Math.round((fullyTrained / total) * 100) : 0;
+  document.getElementById("totalNurses").textContent = total;
+  document.getElementById("trainedNurses").textContent = fullyTrained;
+  document.getElementById("completionRate").textContent = rate + "%";
+  document.getElementById("progressBar").style.width = rate + "%";
+}
+
+function searchNurse() {
+  const term = document.getElementById("searchInput").value.trim().toLowerCase();
+  document.querySelectorAll("#nurseList tr").forEach(row => {
+    row.style.display = row.dataset.name.toLowerCase().includes(term) ? "" : "none";
+  });
+}
+
+function saveData() {
+  const data = {};
+  nurses.forEach(n => {
+    const name = n.name;
+    const lectureInput = document.querySelector(`input[data-name="${name}"][data-type="lecture"]`);
+    const caseInputs = document.querySelectorAll(`input[data-name="${name}"][data-type="case"]`);
+    if(lectureInput) {
+        const lecture = lectureInput.value;
+        const cases = Array.from(caseInputs).map(i => i.value);
+        data[name] = { lecture, cases };
+    }
+  });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  alert("Saved!");
+}
+
+function loadSavedData() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) return;
+  const data = JSON.parse(saved);
+  nurses.forEach(n => {
+    if (data[n.name]) {
+      const lecInput = document.querySelector(`input[data-name="${n.name}"][data-type="lecture"]`);
+      const caseInps = document.querySelectorAll(`input[data-name="${n.name}"][data-type="case"]`);
+      if(lecInput) lecInput.value = data[n.name].lecture || "";
+      caseInps.forEach((inp, idx) => { inp.value = data[n.name].cases[idx] || ""; });
+      updateStats(n.name);
+    }
+  });
+  updateDashboard();
+}
+
+function exportToCSV() {
+  let csv = "Rank,Name,Lecture,Case 1,Case 2,Case 3,Case 4,Case 5,Total Cases\n";
+  document.querySelectorAll("#nurseList tr").forEach(tr => {
+    if (tr.style.display === "none") return;
+    const rank = tr.children[0].innerText;
+    const name = tr.children[1].innerText;
+    const lectureInput = tr.children[2].querySelector('input');
+    const lecture = lectureInput ? lectureInput.value : "";
+    const cases = Array.from(tr.querySelectorAll('input[data-type="case"]')).map(i => i.value).join(",");
+    const total = tr.children[8].innerText;
+    csv += `${rank},${name},${lecture},${cases},${total}\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.setAttribute('href', url);
+  a.setAttribute('download', 'PACU_Training.csv');
+  a.click();
+}
+
+function prepareAndPrint() { window.print(); }
+
+document.getElementById("password").addEventListener("keypress", e => { if (e.key === "Enter") handleLogin(); });
+</script>
+</body>
+</html>
