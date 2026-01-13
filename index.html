@@ -28,7 +28,7 @@
     
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { padding: 10px; border: 1px solid #999; text-align: center; }
-    th { background-color: #2980b9; color: white; font-weight: 600; position: sticky; top: 0; }
+    th { background-color: #2980b9; color: white; font-weight: 600; }
     
     .row-complete { background-color: #d4efdf !important; }
     .count { font-weight: bold; color: #c85400; }
@@ -44,61 +44,67 @@
 <body>
 
 <div class="container" id="loginPage">
-  <h1>PACU Nurse Training System</h1>
+  <h1>Nurse Training Record System</h1>
   <div class="login-form">
-    <label>Login Username</label>
+    <label>Username</label>
     <input type="text" id="username" style="width:100%; padding:10px; margin-bottom:20px;">
     <label>Password</label>
     <input type="password" id="password" style="width:100%; padding:10px; margin-bottom:20px;">
-    <button onclick="handleLogin()" style="width:100%; background:#2980b9;">Login</button>
+    <button onclick="handleLogin()" style="width:100%; background:#2980b9;">Sign In</button>
     <p id="errorMsg" style="color:red; text-align:center;"></p>
   </div>
 </div>
 
 <div class="container" id="mainPage" style="display:none;">
   <h1>PACU Nurse Led Auto Discharge Training</h1>
-  <div class="subtitle">🏥 Cloud-Synced Training Records</div>
+  <div class="subtitle">🏥 Clinical Competency & Training Management</div>
 
   <div class="dashboard">
-    <div class="stat-card"><h3>Total Nurses</h3><div class="stat-value" id="totalNurses">0</div></div>
-    <div class="stat-card"><h3>Fully Trained</h3><div class="stat-value" id="trainedNurses">0</div></div>
+    <div class="stat-card"><h3>Total Staff</h3><div class="stat-value" id="totalNurses">0</div></div>
+    <div class="stat-card"><h3>Completed</h3><div class="stat-value" id="trainedNurses">0</div></div>
     <div class="stat-card" style="grid-column: span 2;">
-      <h3>Overall Program Completion (Lecture + 5 Cases)</h3>
+      <h3>Overall Completion Progress</h3>
       <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
       <p id="completionRate" style="text-align:center; margin-top:5px;">0% Qualified</p>
     </div>
   </div>
 
   <div class="search-box">
-    <input type="text" id="searchInput" placeholder="Search nurse name..." oninput="searchNurse()">
+    <input type="text" id="searchInput" placeholder="Type nurse name to search..." oninput="searchNurse()">
   </div>
 
-  <div id="syncStatus" class="sync-status">📡 Fetching latest data from Cloud...</div>
+  <div id="syncStatus" class="sync-status">📡 Syncing with Cloud...</div>
 
   <table>
     <thead>
       <tr>
-        <th>Rank</th><th>Nurse Name</th><th style="background:#1a5276;">Lecture</th>
-        <th>Case 1</th><th>Case 2</th><th>Case 3</th><th>Case 4</th><th>Case 5</th><th>Total Cases</th>
+        <th>Rank</th>
+        <th>Nurse Name</th>
+        <th style="background:#1a5276;">Lecture Date</th>
+        <th>Case 1</th>
+        <th>Case 2</th>
+        <th>Case 3</th>
+        <th>Case 4</th>
+        <th>Case 5</th>
+        <th>Total Cases</th>
       </tr>
     </thead>
     <tbody id="nurseList"></tbody>
   </table>
 
   <div style="text-align:center; margin-top:40px;">
-    <button class="save-btn" onclick="saveToCloud()">✅ Save & Sync to Cloud</button>
-    <button class="export-btn" onclick="exportToCSV()">📊 Export to Excel (CSV)</button>
+    <button class="save-btn" onclick="saveToCloud()">💾 Save & Sync Data</button>
+    <button class="export-btn" onclick="exportToCSV()">📊 Download Excel Report</button>
   </div>
 </div>
 
 <script>
-// --- Firebase Configuration ---
+// --- FIREBASE CONFIG ---
 const firebaseConfig = {
   apiKey: "AIzaSyD3AFw22hvG_45FB3RMPdaccyA8VI-IDxI",
   databaseURL: "https://pacu-auto-discharge-training-default-rtdb.firebaseio.com"
 };
 
-// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -164,7 +170,7 @@ function handleLogin() {
     loadNurseList();
     loadFromCloud();
   } else {
-    document.getElementById("errorMsg").textContent = "Invalid username or password.";
+    document.getElementById("errorMsg").textContent = "Error: Invalid username or password.";
   }
 }
 
@@ -223,18 +229,13 @@ function saveToCloud() {
   const data = {};
   nurses.forEach(n => {
     const name = n.name;
-    const lectureInput = document.querySelector(`input[data-name="${name}"][data-type="lecture"]`);
-    const caseInputs = document.querySelectorAll(`input[data-name="${name}"][data-type="case"]`);
-    if(lectureInput) {
-      data[name.replace(/[.#$/[\]]/g, "_")] = { 
-        lecture: lectureInput.value, 
-        cases: Array.from(caseInputs).map(i => i.value) 
-      };
-    }
+    const lec = document.querySelector(`input[data-name="${name}"][data-type="lecture"]`).value;
+    const caseList = Array.from(document.querySelectorAll(`input[data-name="${name}"][data-type="case"]`)).map(i => i.value);
+    data[name.replace(/[.#$/[\]]/g, "_")] = { lecture: lec, cases: caseList };
   });
 
   db.ref("training_data").set(data)
-    .then(() => alert("✅ Success! Data synced to Cloud."))
+    .then(() => alert("✅ Sync Successful! Data stored in Cloud."))
     .catch(err => alert("❌ Sync Failed: " + err.message));
 }
 
@@ -242,7 +243,7 @@ function loadFromCloud() {
   const status = document.getElementById("syncStatus");
   db.ref("training_data").once("value", (snapshot) => {
     const data = snapshot.val();
-    if (!data) { status.textContent = "🆕 No cloud data found. Start entering records!"; return; }
+    if (!data) { status.textContent = "🆕 No cloud records found. Start entering data!"; return; }
     
     nurses.forEach(n => {
       const safeName = n.name.replace(/[.#$/[\]]/g, "_");
@@ -254,8 +255,8 @@ function loadFromCloud() {
         updateStats(n.name);
       }
     });
-    const now = new Date().toLocaleTimeString();
-    status.textContent = "🟢 Cloud Sync Active (Last loaded: " + now + ")";
+    const lastTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    status.textContent = "🟢 Connected: Cloud data loaded (Updated at " + lastTime + ")";
   });
 }
 
@@ -267,7 +268,7 @@ function searchNurse() {
 }
 
 function exportToCSV() {
-  let csv = "\uFEFFRank,Name,Lecture Date,Case 1,Case 2,Case 3,Case 4,Case 5,Total Cases\n";
+  let csv = "\uFEFFRank,Nurse Name,Lecture,Case 1,Case 2,Case 3,Case 4,Case 5,Total\n";
   document.querySelectorAll("#nurseList tr").forEach(tr => {
     if (tr.style.display === "none") return;
     const cells = Array.from(tr.children);
@@ -278,7 +279,7 @@ function exportToCSV() {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'PACU_Cloud_Backup.csv';
+  a.download = 'PACU_Record_Backup.csv';
   a.click();
 }
 </script>
