@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PACU 護理師自主出院培訓紀錄 - 雲端同步版</title>
+  <title>PACU Nurse Training Record - Cloud Sync</title>
   
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
   
   <style>
-    body { font-family: "Microsoft JhengHei", "Segoe UI", sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; color: #2c3e50; }
+    body { font-family: "Segoe UI", Arial, sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; color: #2c3e50; }
     .container { max-width: 1450px; margin: 0 auto; background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
     h1 { text-align: center; color: #1a5276; margin: 0 0 8px; }
     .subtitle { text-align: center; color: #555; margin: 0 0 1.5rem; font-size: 1.2rem; }
@@ -44,68 +44,67 @@
 <body>
 
 <div class="container" id="loginPage">
-  <h1>PACU 護理培訓紀錄系統</h1>
+  <h1>PACU Nurse Training System</h1>
   <div class="login-form">
-    <label>登入帳號</label>
+    <label>Login Username</label>
     <input type="text" id="username" style="width:100%; padding:10px; margin-bottom:20px;">
-    <label>密碼</label>
+    <label>Password</label>
     <input type="password" id="password" style="width:100%; padding:10px; margin-bottom:20px;">
-    <button onclick="handleLogin()" style="width:100%; background:#2980b9;">登入</button>
+    <button onclick="handleLogin()" style="width:100%; background:#2980b9;">Login</button>
     <p id="errorMsg" style="color:red; text-align:center;"></p>
   </div>
 </div>
 
 <div class="container" id="mainPage" style="display:none;">
-  <h1>PACU 護理師自主出院培訓紀錄</h1>
-  <div class="subtitle">🏥 雲端即時同步系統 (Firebase 版)</div>
+  <h1>PACU Nurse Led Auto Discharge Training</h1>
+  <div class="subtitle">🏥 Cloud-Synced Training Records</div>
 
   <div class="dashboard">
-    <div class="stat-card"><h3>總護理師人數</h3><div class="stat-value" id="totalNurses">0</div></div>
-    <div class="stat-card"><h3>已達標人數</h3><div class="stat-value" id="trainedNurses">0</div></div>
+    <div class="stat-card"><h3>Total Nurses</h3><div class="stat-value" id="totalNurses">0</div></div>
+    <div class="stat-card"><h3>Fully Trained</h3><div class="stat-value" id="trainedNurses">0</div></div>
     <div class="stat-card" style="grid-column: span 2;">
-      <h3>整體計畫完成率 (講座 + 5 案)</h3>
+      <h3>Overall Program Completion (Lecture + 5 Cases)</h3>
       <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
-      <p id="completionRate" style="text-align:center; margin-top:5px;">0% 已達標</p>
+      <p id="completionRate" style="text-align:center; margin-top:5px;">0% Qualified</p>
     </div>
   </div>
 
   <div class="search-box">
-    <input type="text" id="searchInput" placeholder="搜尋護理師姓名..." oninput="searchNurse()">
+    <input type="text" id="searchInput" placeholder="Search nurse name..." oninput="searchNurse()">
   </div>
 
-  <div id="syncStatus" class="sync-status">📡 正在從雲端載入最新資料...</div>
+  <div id="syncStatus" class="sync-status">📡 Fetching latest data from Cloud...</div>
 
   <table>
     <thead>
       <tr>
-        <th>職級</th><th>護理師姓名</th><th style="background:#1a5276;">講座日期</th>
-        <th>個案 1</th><th>個案 2</th><th>個案 3</th><th>個案 4</th><th>個案 5</th><th>總個案數</th>
+        <th>Rank</th><th>Nurse Name</th><th style="background:#1a5276;">Lecture</th>
+        <th>Case 1</th><th>Case 2</th><th>Case 3</th><th>Case 4</th><th>Case 5</th><th>Total Cases</th>
       </tr>
     </thead>
     <tbody id="nurseList"></tbody>
   </table>
 
   <div style="text-align:center; margin-top:40px;">
-    <button class="save-btn" onclick="saveToCloud()">✅ 儲存並同步至雲端</button>
-    <button class="export-btn" onclick="exportToCSV()">📊 導出 Excel 備份</button>
+    <button class="save-btn" onclick="saveToCloud()">✅ Save & Sync to Cloud</button>
+    <button class="export-btn" onclick="exportToCSV()">📊 Export to Excel (CSV)</button>
   </div>
 </div>
 
 <script>
-// --- 已為您填入的 Firebase 配置 ---
+// --- Firebase Configuration ---
 const firebaseConfig = {
   apiKey: "AIzaSyD3AFw22hvG_45FB3RMPdaccyA8VI-IDxI",
   databaseURL: "https://pacu-auto-discharge-training-default-rtdb.firebaseio.com"
 };
 
-// 初始化 Firebase
+// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 const CORRECT_USER = "periop";
 const CORRECT_PASS = "1234";
 
-// 護理師名單 (已自動排序)
 const nurses = [
   {rank: "APN", name: "CHAN Suet Fan"}, {rank: "APN", name: "CHAN Yuen Fun"}, {rank: "APN", name: "CHENG Mei Ling"},
   {rank: "APN", name: "CHEUNG Hoi Ching"}, {rank: "APN", name: "CHEUNG Mei Yi"}, {rank: "APN", name: "CHOI Yee Ki"},
@@ -165,7 +164,7 @@ function handleLogin() {
     loadNurseList();
     loadFromCloud();
   } else {
-    document.getElementById("errorMsg").textContent = "帳號或密碼錯誤。";
+    document.getElementById("errorMsg").textContent = "Invalid username or password.";
   }
 }
 
@@ -195,14 +194,14 @@ function loadNurseList() {
 
 function updateStats(name) {
   const row = document.getElementById(`row-${name.replace(/\s+/g,'-')}`);
-  const lecture = document.querySelector(`input[data-name="${name}"][data-type="lecture"]`).value;
+  const lectureInput = document.querySelector(`input[data-name="${name}"][data-type="lecture"]`);
   const cases = document.querySelectorAll(`input[data-name="${name}"][data-type="case"]`);
   
   let caseCount = 0;
   cases.forEach(inp => { if (inp.value) caseCount++; });
   document.getElementById(`count-${name.replace(/\s+/g,'-')}`).textContent = caseCount;
   
-  if (lecture && caseCount === 5) row.classList.add('row-complete');
+  if (lectureInput.value && caseCount === 5) row.classList.add('row-complete');
   else row.classList.remove('row-complete');
   
   updateDashboard();
@@ -216,7 +215,7 @@ function updateDashboard() {
   });
   const rate = Math.round((fullyTrained / nurses.length) * 100);
   document.getElementById("trainedNurses").textContent = fullyTrained;
-  document.getElementById("completionRate").textContent = rate + "% 已達標";
+  document.getElementById("completionRate").textContent = rate + "% Qualified";
   document.getElementById("progressBar").style.width = rate + "%";
 }
 
@@ -235,15 +234,15 @@ function saveToCloud() {
   });
 
   db.ref("training_data").set(data)
-    .then(() => alert("✅ 同步成功！雲端資料已更新。"))
-    .catch(err => alert("❌ 同步失敗：" + err.message));
+    .then(() => alert("✅ Success! Data synced to Cloud."))
+    .catch(err => alert("❌ Sync Failed: " + err.message));
 }
 
 function loadFromCloud() {
   const status = document.getElementById("syncStatus");
   db.ref("training_data").once("value", (snapshot) => {
     const data = snapshot.val();
-    if (!data) { status.textContent = "🆕 目前雲端尚無資料，請開始輸入。"; return; }
+    if (!data) { status.textContent = "🆕 No cloud data found. Start entering records!"; return; }
     
     nurses.forEach(n => {
       const safeName = n.name.replace(/[.#$/[\]]/g, "_");
@@ -255,7 +254,8 @@ function loadFromCloud() {
         updateStats(n.name);
       }
     });
-    status.textContent = "🟢 雲端同步中 (資料已載入)";
+    const now = new Date().toLocaleTimeString();
+    status.textContent = "🟢 Cloud Sync Active (Last loaded: " + now + ")";
   });
 }
 
@@ -267,7 +267,7 @@ function searchNurse() {
 }
 
 function exportToCSV() {
-  let csv = "\uFEFF職級,姓名,講座日期,個案1,個案2,個案3,個案4,個案5,總案數\n";
+  let csv = "\uFEFFRank,Name,Lecture Date,Case 1,Case 2,Case 3,Case 4,Case 5,Total Cases\n";
   document.querySelectorAll("#nurseList tr").forEach(tr => {
     if (tr.style.display === "none") return;
     const cells = Array.from(tr.children);
@@ -278,7 +278,7 @@ function exportToCSV() {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'PACU_Backup.csv';
+  a.download = 'PACU_Cloud_Backup.csv';
   a.click();
 }
 </script>
