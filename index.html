@@ -3,48 +3,70 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PACU Nurse Training Record - Cloud Sync</title>
+  <title>PACU Nurse Led Auto Discharge Training Record</title>
   
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
   
   <style>
+    /* General Styling */
     body { font-family: "Segoe UI", Arial, sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; color: #2c3e50; }
     .container { max-width: 1450px; margin: 0 auto; background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
     h1 { text-align: center; color: #1a5276; margin: 0 0 8px; }
-    .subtitle { text-align: center; color: #555; margin: 0 0 1.5rem; font-size: 1.2rem; }
+    .subtitle { text-align: center; color: #555; margin: 0 0 1.5rem; font-size: 1.2rem; font-weight: 500; }
     
-    .dashboard { background: #f8fbff; border: 1px solid #d6e9ff; border-radius: 10px; padding: 25px; margin-bottom: 2.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 25px; }
-    .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 3px 12px rgba(0,0,0,0.06); text-align: center; }
-    .stat-value { font-size: 2.4rem; font-weight: bold; color: #2980b9; }
-    
-    .progress-bar-container { height: 24px; background: #e9ecef; border-radius: 12px; overflow: hidden; margin-top: 10px; }
+    /* Dashboard & Progress */
+    .dashboard { background: #f8fbff; border: 1px solid #d6e9ff; border-radius: 10px; padding: 20px; margin-bottom: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .stat-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 3px 12px rgba(0,0,0,0.06); text-align: center; }
+    .stat-value { font-size: 2.2rem; font-weight: bold; color: #2980b9; }
+    .progress-bar-container { height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden; margin-top: 10px; }
     .progress-bar { height: 100%; background: linear-gradient(90deg, #27ae60, #2ecc71); transition: width 0.5s; width: 0%; }
     
+    /* Controls */
     .search-box { text-align: center; margin-bottom: 1.5rem; }
     .search-box input { width: 100%; max-width: 500px; padding: 12px; border: 2px solid #3498db; border-radius: 8px; font-size: 1rem; }
+    .sync-status { text-align: center; font-size: 0.9rem; margin-bottom: 10px; color: #27ae60; font-weight: bold; }
     
-    .sync-status { text-align: center; font-size: 0.95rem; margin-bottom: 10px; color: #27ae60; font-weight: bold; }
-    
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 10px; border: 1px solid #999; text-align: center; }
+    /* Table Styling */
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; }
+    th, td { padding: 6px 8px; border: 1px solid #999; text-align: center; }
     th { background-color: #2980b9; color: white; font-weight: 600; }
-    
     .row-complete { background-color: #d4efdf !important; }
     .count { font-weight: bold; color: #c85400; }
     
-    button { padding: 12px 24px; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 5px; font-weight: bold; font-size: 1rem; }
+    /* Buttons */
+    .button-group { text-align: center; margin-top: 30px; }
+    button { padding: 10px 20px; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 5px; font-weight: bold; font-size: 0.95rem; }
     .save-btn { background-color: #27ae60; }
     .export-btn { background-color: #d35400; }
+    .print-btn { background-color: #7f8c8d; }
     
     .login-form { max-width: 400px; margin: 0 auto; padding: 50px 0; }
-    input[type="date"] { padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-family: inherit; }
+    input[type="date"] { padding: 3px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.85rem; }
+
+    /* --- ENHANCED SMALL PRINT FORMATTING --- */
+    @media print {
+      @page { margin: 0.5cm; size: landscape; }
+      body { background: white; padding: 0; margin: 0; color: black; }
+      .container { box-shadow: none; border: none; padding: 0; width: 100%; max-width: 100%; }
+      .dashboard, .search-box, .button-group, .sync-status, #loginPage, .progress-bar-container { display: none !important; }
+      
+      h1 { font-size: 1.1rem; margin-bottom: 2px; }
+      .subtitle { font-size: 0.9rem; margin-bottom: 10px; color: black; display: block !important; }
+      
+      table { font-size: 0.65rem; width: 100%; border: 0.5px solid black; }
+      th, td { padding: 2px 4px; border: 0.5px solid black; }
+      th { background-color: #f2f2f2 !important; color: black !important; }
+      
+      input[type="date"] { border: none; background: transparent; width: 70px; font-size: 0.65rem; }
+      .row-complete { background-color: #f9f9f9 !important; font-weight: bold; }
+    }
   </style>
 </head>
 <body>
 
 <div class="container" id="loginPage">
-  <h1>Nurse Training Record System</h1>
+  <h1>PACU Nurse Led Auto Discharge Training Record</h1>
   <div class="login-form">
     <label>Username</label>
     <input type="text" id="username" style="width:100%; padding:10px; margin-bottom:20px;">
@@ -56,45 +78,46 @@
 </div>
 
 <div class="container" id="mainPage" style="display:none;">
-  <h1>PACU Nurse Led Auto Discharge Training</h1>
-  <div class="subtitle">🏥 Clinical Competency & Training Management</div>
+  <h1>PACU Nurse Led Auto Discharge Training Record</h1>
+  <div class="subtitle">Nurse Training and Clinical Competency Record</div>
 
   <div class="dashboard">
-    <div class="stat-card"><h3>Total Staff</h3><div class="stat-value" id="totalNurses">0</div></div>
+    <div class="stat-card"><h3>Staff Count</h3><div class="stat-value" id="totalNurses">0</div></div>
     <div class="stat-card"><h3>Completed</h3><div class="stat-value" id="trainedNurses">0</div></div>
     <div class="stat-card" style="grid-column: span 2;">
-      <h3>Overall Completion Progress</h3>
+      <h3>Overall Progress</h3>
       <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
-      <p id="completionRate" style="text-align:center; margin-top:5px;">0% Qualified</p>
+      <p id="completionRate" style="text-align:center; margin-top:5px; font-weight:bold;">0% Qualified</p>
     </div>
   </div>
 
   <div class="search-box">
-    <input type="text" id="searchInput" placeholder="Type nurse name to search..." oninput="searchNurse()">
+    <input type="text" id="searchInput" placeholder="Search by nurse name..." oninput="searchNurse()">
   </div>
 
   <div id="syncStatus" class="sync-status">📡 Syncing with Cloud...</div>
 
-  <table>
+  <table id="recordTable">
     <thead>
       <tr>
         <th>Rank</th>
         <th>Nurse Name</th>
-        <th style="background:#1a5276;">Lecture Date</th>
+        <th style="background:#1a5276;">Lecture</th>
         <th>Case 1</th>
         <th>Case 2</th>
         <th>Case 3</th>
         <th>Case 4</th>
         <th>Case 5</th>
-        <th>Total Cases</th>
+        <th>Total</th>
       </tr>
     </thead>
     <tbody id="nurseList"></tbody>
   </table>
 
-  <div style="text-align:center; margin-top:40px;">
-    <button class="save-btn" onclick="saveToCloud()">💾 Save & Sync Data</button>
-    <button class="export-btn" onclick="exportToCSV()">📊 Download Excel Report</button>
+  <div class="button-group">
+    <button class="save-btn" onclick="saveToCloud()">💾 Save to Cloud</button>
+    <button class="export-btn" onclick="exportToCSV()">📊 Export CSV</button>
+    <button class="print-btn" onclick="window.print()">🖨️ Print Record</button>
   </div>
 </div>
 
@@ -243,7 +266,7 @@ function loadFromCloud() {
   const status = document.getElementById("syncStatus");
   db.ref("training_data").once("value", (snapshot) => {
     const data = snapshot.val();
-    if (!data) { status.textContent = "🆕 No cloud records found. Start entering data!"; return; }
+    if (!data) { status.textContent = "🆕 No cloud records found."; return; }
     
     nurses.forEach(n => {
       const safeName = n.name.replace(/[.#$/[\]]/g, "_");
@@ -256,7 +279,7 @@ function loadFromCloud() {
       }
     });
     const lastTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    status.textContent = "🟢 Connected: Cloud data loaded (Updated at " + lastTime + ")";
+    status.textContent = "🟢 Connected (Last Sync: " + lastTime + ")";
   });
 }
 
@@ -279,7 +302,7 @@ function exportToCSV() {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'PACU_Record_Backup.csv';
+  a.download = 'PACU_Record.csv';
   a.click();
 }
 </script>
